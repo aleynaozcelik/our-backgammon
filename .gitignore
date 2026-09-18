@@ -2,3 +2,7 @@ node_modules
 
 # Next.js build and development output
 .next/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
