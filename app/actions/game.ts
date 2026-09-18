@@ -293,6 +293,65 @@ export async function getGameSnapshot(roomCode: string) {
   return data;
 }
 
+export async function restartGameAction(roomCode: string, playerId: string) {
+  const supabase = await createAdminClient();
+  const { data: game } = await supabase
+    .from('games')
+    .select('*')
+    .eq('room_code', roomCode)
+    .single();
+
+  if (!game) return { error: 'Game not found.' };
+  if (game.player1_id !== playerId && game.player2_id !== playerId) {
+    return { error: 'You are not in this game.' };
+  }
+  if (!game.player1_id || !game.player2_id) {
+    return { error: 'Both players need to be in the game to start a rematch.' };
+  }
+
+  const state = game.game_state as unknown as GameState;
+  if (state.status === 'PLAYING') return { success: true, gameState: state };
+  if (state.status !== 'FINISHED') return { error: 'The game is not finished yet.' };
+
+  const nextState: GameState = {
+    ...getInitialGameState(),
+    status: 'PLAYING',
+    version: state.version + 1,
+  };
+
+  const { data: updatedGame, error: updateError } = await supabase
+    .from('games')
+    .update({
+      game_state: nextState as unknown as Json,
+      current_player: nextState.currentPlayer,
+      status: nextState.status,
+      winner: null,
+      version: game.version + 1,
+    })
+    .eq('id', game.id)
+    .eq('version', game.version)
+    .select('game_state')
+    .maybeSingle();
+
+  if (updateError) return { error: 'Could not start the rematch.' };
+  if (!updatedGame) {
+    const { data: latestGame } = await supabase
+      .from('games')
+      .select('game_state')
+      .eq('id', game.id)
+      .maybeSingle();
+    const latestState = latestGame?.game_state as unknown as GameState | undefined;
+
+    if (latestState?.status === 'PLAYING') {
+      return { success: true, gameState: latestState };
+    }
+
+    return { error: 'The game changed before the rematch could start.' };
+  }
+
+  return { success: true, gameState: updatedGame.game_state };
+}
+
 export async function rollDiceAction(roomCode: string, playerId: string) {
   const supabase = await createAdminClient();
 

@@ -471,3 +471,159 @@ body:has(.game-shell),
 @media (orientation: landscape) and (max-height: 650px) {
   .game-table-heading { display: none; }
 }
+
+/* Victory overlay */
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  color: #f5f0e7;
+  background: rgba(14, 52, 59, 0.72);
+  backdrop-filter: blur(7px);
+  animation: victory-overlay-in 0.7s ease both;
+}
+
+.victory-overlay-leaving {
+  animation: victory-overlay-out 0.3s ease both;
+}
+
+.victory-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(219, 151, 103, 0.42), transparent 33%),
+    linear-gradient(125deg, rgba(12, 69, 76, 0.35), rgba(16, 61, 67, 0.78) 48%, rgba(177, 113, 88, 0.25));
+}
+
+.victory-grain {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  transform: rotate(9deg);
+}
+
+.victory-particles span {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border: 1px solid rgba(244, 225, 190, 0.75);
+  border-radius: 50%;
+  animation: victory-particle-float 4.8s ease-in-out infinite;
+}
+
+.victory-particles span:nth-child(1) { left: 22%; top: 30%; animation-delay: -0.7s; }
+.victory-particles span:nth-child(2) { left: 72%; top: 24%; width: 3px; height: 3px; animation-delay: -2.2s; }
+.victory-particles span:nth-child(3) { left: 17%; top: 68%; width: 3px; height: 3px; animation-delay: -1.5s; }
+.victory-particles span:nth-child(4) { left: 82%; top: 66%; animation-delay: -3.2s; }
+.victory-particles span:nth-child(5) { left: 30%; top: 80%; width: 2px; height: 2px; animation-delay: -4s; }
+.victory-particles span:nth-child(6) { left: 76%; top: 78%; width: 2px; height: 2px; animation-delay: -0.2s; }
+
+.victory-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 600px);
+  padding: clamp(44px, 8vw, 76px) 24px 48px;
+  text-align: center;
+  animation: victory-card-up 0.8s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.victory-card-line {
+  width: 46px;
+  height: 1px;
+  margin: 0 auto 26px;
+  background: #e6b895;
+}
+
+.victory-kicker {
+  margin: 0 0 24px;
+  color: #e6b895;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 3px;
+}
+
+.victory-card h2 {
+  margin: 0;
+  color: #f8f3ea;
+  font: 400 clamp(38px, 7vw, 76px) / 0.95 Georgia, serif;
+  letter-spacing: -3px;
+  text-wrap: balance;
+}
+
+.victory-subtitle {
+  margin: 22px 0 117px;
+  color: rgba(242, 238, 227, 0.7);
+  font: italic 400 clamp(15px, 2vw, 18px) / 1.5 Georgia, serif;
+}
+
+.victory-play-again-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 49px;
+  padding: 0 19px;
+  border: 1px solid rgba(245, 238, 227, 0.38);
+  border-radius: 5px;
+  color: #f7f1e7;
+  background: rgba(245, 238, 227, 0.08);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+}
+
+.victory-play-again-button:hover {
+  border-color: #e6b895;
+  background: #d99072;
+  transform: translateY(-2px);
+}
+
+.victory-play-again-arrow {
+  opacity: 0.55;
+  transition: transform 0.25s;
+}
+
+.victory-play-again-button:hover .victory-play-again-arrow {
+  transform: translateX(3px);
+}
+
+@keyframes victory-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes victory-overlay-out {
+  to { opacity: 0; }
+}
+
+@keyframes victory-card-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes victory-particle-float {
+  0%, 100% { opacity: 0.3; transform: translateY(0) scale(0.8); }
+  50% { opacity: 1; transform: translateY(-16px) scale(1); }
+}
+
+@media (max-width: 520px) {
+  .victory-card { padding-top: 38px; }
+  .victory-kicker { margin-bottom: 20px; font-size: 8px; letter-spacing: 2.3px; }
+  .victory-card h2 { letter-spacing: -1.8px; }
+  .victory-subtitle { margin-bottom: 111px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .victory-overlay,
+  .victory-card,
+  .victory-particles span {
+    animation: none;
+  }
+}

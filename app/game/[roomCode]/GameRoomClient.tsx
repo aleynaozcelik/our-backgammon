@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { GameState, Player, Move } from '@/types/game';
 import { BackgammonBoard } from '@/components/game/BackgammonBoard';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
+import { VictoryOverlay } from '@/components/game/VictoryOverlay';
 import {
   joinGame,
   getGameRoomStatus,
@@ -21,6 +22,7 @@ import {
   devSetDiceAction,
   devLoadPresetAction,
   devAutoPlayOpponentStepAction,
+  restartGameAction,
 } from '@/app/actions/game';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, ArrowUpRight, Check, Heart, LogOut, Volume2, VolumeX, Wrench, X } from 'lucide-react';
@@ -31,6 +33,25 @@ interface GameRoomClientProps {
 
 const SYNC_POLL_INTERVAL_MS = 2000;
 type DevPreset = 'bar' | 'bearOff' | 'hit' | 'finish';
+type VictoryPreview = 'hector' | 'player';
+
+const PLAYER_VICTORY_COPIES = [
+  {
+    label: 'BREAKING BACKGAMMON NEWS.',
+    winner: 'HECTOR NEEDS A REMATCH.',
+    subtitle: 'His checkers are still looking for the exit.',
+  },
+  {
+    label: 'OFFICIAL BOARD RULING.',
+    winner: 'THE BOARD HAS A NEW BOSS.',
+    subtitle: 'Hector is reviewing the rulebook upside down.',
+  },
+  {
+    label: 'THE DICE HAVE SPOKEN.',
+    winner: 'HECTOR HAS BEEN HUMBLED.',
+    subtitle: 'A brave effort. A memorable defeat.',
+  },
+] as const;
 
 export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const router = useRouter();
@@ -46,6 +67,7 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const [devDice, setDevDice] = useState<[number, number]>([1, 2]);
   const [devAutoOpponent, setDevAutoOpponent] = useState(false);
   const [devPanelOpen, setDevPanelOpen] = useState(isGameDevToolsEnabled());
+  const [victoryPreview, setVictoryPreview] = useState<VictoryPreview | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [inviteCopyError, setInviteCopyError] = useState(false);
@@ -317,6 +339,24 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
     router.push('/');
   };
 
+  const handleRematch = React.useCallback(async () => {
+    if (!connected || !playerId || viewerPlayer === 'spectator') return;
+
+    try {
+      const result = await restartGameAction(roomCode, playerId);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      if (result.gameState) {
+        setGameState(result.gameState as unknown as GameState);
+      }
+    } catch {
+      setConnected(false);
+    }
+  }, [connected, playerId, roomCode, viewerPlayer]);
+
   const isDevToolsVisible = isGameDevToolsEnabled() && viewerPlayer !== 'spectator';
 
   const applyDevResult = (result: { error?: string; gameState?: unknown }) => {
@@ -422,7 +462,7 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
                   </button>
                   <button
                     onClick={() => setIsJoiningAsOtherPlayer(true)}
-                    className="w-full text-sm font-semibold uppercase tracking-wide text-[var(--ocean)]"
+                    className="w-full text-sm font-semibold uppercase tracking-wide text-[var(--cream)]"
                   >
                     NO, I&apos;M THE OTHER PLAYER
                   </button>
@@ -485,6 +525,31 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
         : null;
   const waitingForOpponent = playersInfo.player2 === 'Waiting...';
   const activePlayerName = gameState.currentPlayer === 'player1' ? playersInfo.player1 : playersInfo.player2;
+  const finishedWinner = gameState.status === 'FINISHED' ? gameState.winner : null;
+  const nonHectorPlayer: Player | null = hectorPlayer === 'player1'
+    ? 'player2'
+    : hectorPlayer === 'player2'
+      ? 'player1'
+      : viewerPlayer === 'spectator'
+        ? null
+        : viewerPlayer;
+  const previewWinner = victoryPreview === 'hector'
+    ? hectorPlayer ?? (viewerPlayer === 'player1' ? 'player2' : 'player1')
+    : victoryPreview === 'player'
+      ? nonHectorPlayer
+      : null;
+  const overlayWinner = finishedWinner ?? previewWinner;
+  const isVictoryPreview = finishedWinner === null && previewWinner !== null;
+  const isHectorVictory = overlayWinner === hectorPlayer || (isVictoryPreview && victoryPreview === 'hector');
+  const overlayCopy = !overlayWinner || isHectorVictory
+    ? undefined
+    : hectorPlayer
+      ? PLAYER_VICTORY_COPIES[gameState.turnNumber % PLAYER_VICTORY_COPIES.length]
+      : {
+        label: 'A GAME WELL PLAYED.',
+        winner: `${(overlayWinner === 'player1' ? playersInfo.player1 : playersInfo.player2).toUpperCase()} WINS.`,
+        subtitle: 'The dice have no notes.',
+      };
 
   return (
     <div className="game-room flex h-full w-full max-w-[1400px] flex-col gap-2 p-1 sm:gap-3 sm:p-4">
@@ -583,6 +648,24 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
               </button>
             </div>
             <div className="grid gap-2">
+              <div className="grid gap-2 border-t border-[var(--line)] pt-3">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--teal)]">Victory preview · local only</div>
+                <button
+                  type="button"
+                  onClick={() => setVictoryPreview('hector')}
+                  className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold"
+                >
+                  Preview: Hector wins
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVictoryPreview('player')}
+                  disabled={!nonHectorPlayer}
+                  className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Preview: I win
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setDevAutoOpponent((enabled) => !enabled)}
@@ -642,17 +725,18 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
           />
         </div>
 
-        {/* Game Status */}
-        {gameState.status === 'FINISHED' && (
-          <div className="text-center text-xl font-bold uppercase text-[var(--coral)]">
-            GAME OVER! WINNER: {gameState.winner === 'player1' ? playersInfo.player1 : playersInfo.player2}
-          </div>
-        )}
       </div>
 
       <footer className="game-footer">
         <Link href="/"><ArrowLeft size={13} /> Back to lobby</Link>
       </footer>
+
+      {overlayWinner && (
+        <VictoryOverlay
+          {...(overlayCopy ?? {})}
+          onPlayAgain={isVictoryPreview ? () => setVictoryPreview(null) : handleRematch}
+        />
+      )}
 
       {inviteOpen && (
         <div className="game-invite-backdrop" onClick={() => setInviteOpen(false)}>

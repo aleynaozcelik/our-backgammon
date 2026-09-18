@@ -337,82 +337,82 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
     <div className={roomStyles.gameRoomFrame}>
       <div className={roomStyles.gameRoomBoard}>
 
-      {gameState.dice.length === 2 && (
-        <div key={gameState.turnNumber} className={`dice-roll ${roomStyles.gameRoomDice}`}>
-          <Die value={gameState.dice[0]} isUsed={!previewState.remainingMoves.includes(gameState.dice[0])} className={roomStyles.gameRoomDie} />
-          <Die value={gameState.dice[1]} isUsed={!previewState.remainingMoves.includes(gameState.dice[1])} className={roomStyles.gameRoomDie} />
-        </div>
-      )}
+        {gameState.dice.length === 2 && (
+          <div key={gameState.turnNumber} className={`dice-roll ${roomStyles.gameRoomDice}`}>
+            <Die value={gameState.dice[0]} isUsed={!previewState.remainingMoves.includes(gameState.dice[0])} className={roomStyles.gameRoomDie} />
+            <Die value={gameState.dice[1]} isUsed={!previewState.remainingMoves.includes(gameState.dice[1])} className={roomStyles.gameRoomDie} />
+          </div>
+        )}
 
-      {/* Board Layout */}
-      <div className={roomStyles.gameRoomInner}>
+        {/* Board Layout */}
+        <div className={roomStyles.gameRoomInner}>
 
-        {/* Top Half */}
-        <div className={roomStyles.gameRoomRow}>
-          {renderHalfBoard(topIndicesLeft, true)}
+          {/* Top Half */}
+          <div className={roomStyles.gameRoomRow}>
+            {renderHalfBoard(topIndicesLeft, true)}
 
-          {/* BAR */}
-          <div
-            className={roomStyles.gameRoomBar}
-          >
-            {/* Player 2 Bar */}
-            {renderBarCheckers('player2')}
+            {/* BAR */}
+            <div
+              className={roomStyles.gameRoomBar}
+            >
+              {/* Player 2 Bar */}
+              {renderBarCheckers('player2')}
+            </div>
+
+            {renderHalfBoard(topIndicesRight, true)}
           </div>
 
-          {renderHalfBoard(topIndicesRight, true)}
-        </div>
-
-        {/* Middle Hinge Line */}
-        <div className={roomStyles.gameRoomCenter}>
-          <div className="h-px w-full bg-[var(--sand)] shadow-sm sm:h-[2px]" />
-        </div>
-
-        {/* Bottom Half */}
-        <div className={roomStyles.gameRoomRow}>
-          {renderHalfBoard(bottomIndicesLeft, false)}
-
-          {/* BAR */}
-          <div
-            className={roomStyles.gameRoomBar}
-          >
-            {/* Player 1 Bar */}
-            {renderBarCheckers('player1')}
+          {/* Middle Hinge Line */}
+          <div className={roomStyles.gameRoomCenter}>
+            <div className="h-px w-full bg-[var(--sand)] shadow-sm sm:h-[2px]" />
           </div>
 
-          {renderHalfBoard(bottomIndicesRight, false)}
+          {/* Bottom Half */}
+          <div className={roomStyles.gameRoomRow}>
+            {renderHalfBoard(bottomIndicesLeft, false)}
+
+            {/* BAR */}
+            <div
+              className={roomStyles.gameRoomBar}
+            >
+              {/* Player 1 Bar */}
+              {renderBarCheckers('player1')}
+            </div>
+
+            {renderHalfBoard(bottomIndicesRight, false)}
+          </div>
+
         </div>
 
-      </div>
-
-      {showMoveControls && (
-        <div className={`board-move-controls ${roomStyles.gameRoomMoveControls}`}>
-          <button
-            type="button"
-            onClick={() => {
-              setPendingMoves((moves) => moves.slice(0, -1));
-              setSelectedPoint(null);
-            }}
-            disabled={!canUndo}
-            className="pointer-events-auto rounded-lg border border-[var(--line)] bg-[var(--navy)] px-4 py-2 text-xs font-bold text-[var(--sand)] disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (!canConfirmMoves) return;
-              setIsSubmitting(true);
-              void onConfirmMoves(pendingMoves).finally(() => {
-                setIsSubmitting(false);
-              });
-            }}
-            disabled={!canConfirmMoves}
-            className="pointer-events-auto rounded-lg bg-[var(--coral)] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {isSubmitting ? 'Confirming...' : 'Confirm'}
-          </button>
-        </div>
-      )}
+        {showMoveControls && (
+          <div className={`board-move-controls ${roomStyles.gameRoomMoveControls}`}>
+            <button
+              type="button"
+              onClick={() => {
+                setPendingMoves((moves) => moves.slice(0, -1));
+                setSelectedPoint(null);
+              }}
+              disabled={!canUndo}
+              className="pointer-events-auto rounded-lg border border-[var(--line)] bg-[var(--navy)] px-4 py-2 text-xs font-bold text-[var(--sand)] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!canConfirmMoves) return;
+                setIsSubmitting(true);
+                void onConfirmMoves(pendingMoves).finally(() => {
+                  setIsSubmitting(false);
+                });
+              }}
+              disabled={!canConfirmMoves}
+              className="pointer-events-auto rounded-lg bg-[var(--coral)] px-4 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {isSubmitting ? 'Confirming...' : 'Confirm'}
+            </button>
+          </div>
+        )}
       </div>
 
       <aside
@@ -449,7 +449,7 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
         <div className="pointer-events-none fixed inset-0 z-[2000] flex items-center justify-center bg-[var(--navy)]/70 p-6">
           <video
             key={hectorPlayback.sequence}
-            src="/hector.mp4"
+            src="/assets/images/badMoves/bad-move.mp4"
             aria-label="Hector has captured a checker"
             onLoadedData={(event) => {
               const video = event.currentTarget;
