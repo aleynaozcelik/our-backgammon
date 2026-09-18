@@ -3,10 +3,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, RotateCcw } from 'lucide-react'
 
+type VictoryCopy = {
+  winner: string
+  subtitle: string
+  label: string
+}
+
 type VictoryOverlayProps = {
   winner?: string
   subtitle?: string
   label?: string
+  copies?: readonly VictoryCopy[]
+  avoidCopyIndex?: number
+  onCopyChosen?: (copyIndex: number) => void
   onPlayAgain?: () => void | Promise<void>
 }
 
@@ -14,10 +23,26 @@ export function VictoryOverlay({
   winner = 'WAIT… YOU ACTUALLY WON?!',
   subtitle = 'Something went terribly wrong.',
   label = 'The student has escaped.',
+  copies,
+  avoidCopyIndex,
+  onCopyChosen,
   onPlayAgain,
 }: VictoryOverlayProps) {
   const [isLeaving, setIsLeaving] = useState(false)
+  const [copyIndex] = useState<number | null>(() => {
+    if (!copies?.length) return null
+
+    const availableIndexes = Array.from({ length: copies.length }, (_, index) => index)
+      .filter((index) => index !== avoidCopyIndex)
+    const indexesToChooseFrom = availableIndexes.length > 0 ? availableIndexes : [0]
+
+    return indexesToChooseFrom[Math.floor(Math.random() * indexesToChooseFrom.length)]
+  })
   const playAgainButtonRef = useRef<HTMLButtonElement>(null)
+  const selectedCopy = copyIndex === null ? null : copies?.[copyIndex]
+  const visibleWinner = selectedCopy?.winner ?? winner
+  const visibleSubtitle = selectedCopy?.subtitle ?? subtitle
+  const visibleLabel = selectedCopy?.label ?? label
 
   useEffect(() => {
     const previouslyFocusedElement = document.activeElement
@@ -29,6 +54,10 @@ export function VictoryOverlay({
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (copyIndex !== null) onCopyChosen?.(copyIndex)
+  }, [copyIndex, onCopyChosen])
 
   const handlePlayAgain = () => {
     if (isLeaving) return
@@ -63,9 +92,9 @@ export function VictoryOverlay({
 
       <section className="victory-card">
         <div className="victory-card-line" aria-hidden="true" />
-        <p className="victory-kicker">{label}</p>
-        <h2 id="victory-title">{winner}</h2>
-        <p className="victory-subtitle">{subtitle}</p>
+        <p className="victory-kicker">{visibleLabel}</p>
+        <h2 id="victory-title">{visibleWinner}</h2>
+        <p className="victory-subtitle">{visibleSubtitle}</p>
 
         <button
           ref={playAgainButtonRef}

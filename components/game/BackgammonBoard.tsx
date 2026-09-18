@@ -1,5 +1,6 @@
 import roomStyles from './GameRoomBoard.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { GameState, Player, Move } from '@/types/game';
 import { PointUI } from './PointUI';
 import { Checker } from './Checker';
@@ -19,6 +20,21 @@ interface BoardProps {
 
 type SelectedPoint = number | 'bar' | null;
 
+type HectorCaptureMedia = {
+  id: number;
+  kind: 'video' | 'image';
+  src: string;
+};
+
+const HECTOR_FIRST_CAPTURE_VIDEO = '/assets/images/badMoves/bad-move.mp4';
+const HECTOR_LATER_CAPTURE_IMAGES = [
+  '/assets/images/badMoves/bad-move2.jfif',
+  '/assets/images/badMoves/bad_move3.jfif',
+] as const;
+const HECTOR_CAPTURE_IMAGE_DURATION_MS = 2400;
+const THINK_VIDEO_SRC = '/assets/images/think/think.mov';
+const CONFIRM_REMINDER_DELAY_MS = 15_000;
+
 export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChange, viewerPlayer, hectorPlayer, connected = true }: BoardProps) {
   const [selectedPointState, setSelectedPointState] = useState<{ version: number; point: SelectedPoint }>({
     version: gameState.version,
@@ -29,7 +45,9 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
     moves: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hectorPlayback, setHectorPlayback] = useState({ remaining: 0, sequence: 0 });
+  const [hectorPlaybackQueue, setHectorPlaybackQueue] = useState<HectorCaptureMedia[]>([]);
+  const [timedOutConfirmationKey, setTimedOutConfirmationKey] = useState<string | null>(null);
+  const [dismissedConfirmationKey, setDismissedConfirmationKey] = useState<string | null>(null);
   const lastDiceTurn = useRef<number | null>(null);
   useEffect(() => {
     if (gameState.dice.length === 2 && lastDiceTurn.current !== gameState.turnNumber) {
@@ -39,7 +57,22 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
   }, [gameState.dice.length, gameState.turnNumber]);
   const previousGameStateRef = useRef<GameState | null>(null);
   const lastHectorCaptureVersionRef = useRef(-1);
+  const hectorCaptureCountRef = useRef(0);
+  const hectorPlaybackSequenceRef = useRef(0);
   const publishedPendingMovesRef = useRef<string | null>(null);
+
+  const finishHectorPlayback = React.useCallback(() => {
+    setHectorPlaybackQueue((currentQueue) => currentQueue.slice(1));
+  }, []);
+
+  const currentHectorPlayback = hectorPlaybackQueue[0] ?? null;
+
+  useEffect(() => {
+    if (!currentHectorPlayback || currentHectorPlayback.kind !== 'image') return;
+
+    const timer = window.setTimeout(finishHectorPlayback, HECTOR_CAPTURE_IMAGE_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [currentHectorPlayback, finishHectorPlayback]);
 
   const pendingMoves = useMemo(
     () => pendingMoveState.version === gameState.version ? pendingMoveState.moves : [],
@@ -72,6 +105,17 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
     const previousGameState = previousGameStateRef.current;
     // Ignore delayed snapshots so the same committed turn cannot trigger again.
     if (previousGameState && gameState.version < previousGameState.version) return;
+
+    const hasStartedNewGame = previousGameState && (
+      gameState.turnNumber < previousGameState.turnNumber ||
+      (previousGameState.status === 'FINISHED' && gameState.status === 'PLAYING')
+    );
+    if (hasStartedNewGame) {
+      hectorCaptureCountRef.current = 0;
+      lastHectorCaptureVersionRef.current = -1;
+      setHectorPlaybackQueue([]);
+    }
+
     previousGameStateRef.current = gameState;
 
     if (!previousGameState || viewerPlayer === 'spectator' || !hectorPlayer) return;
@@ -87,17 +131,31 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
       (gameState.turnNumber <= previousGameState.turnNumber && gameState.status !== 'FINISHED')
     ) return;
 
-    // One playback per confirmed turn, regardless of how many checkers were hit.
     lastHectorCaptureVersionRef.current = gameState.version;
-    setHectorPlayback(current => ({ ...current, remaining: current.remaining + 1 }));
-  }, [gameState, hectorPlayer, viewerPlayer]);
+    // The first capture gets the existing video; every later capture gets one image.
+    const newCaptureMedia = Array.from({ length: captures }, () => {
+      const isFirstHectorCapture = hectorCaptureCountRef.current === 0;
+      hectorCaptureCountRef.current += 1;
+      hectorPlaybackSequenceRef.current += 1;
 
-  const finishHectorPlayback = () => {
-    setHectorPlayback(current => ({
-      remaining: Math.max(0, current.remaining - 1),
-      sequence: current.sequence + 1,
-    }));
-  };
+      if (isFirstHectorCapture) {
+        return {
+          id: hectorPlaybackSequenceRef.current,
+          kind: 'video' as const,
+          src: HECTOR_FIRST_CAPTURE_VIDEO,
+        };
+      }
+
+      const imageIndex = Math.floor(Math.random() * HECTOR_LATER_CAPTURE_IMAGES.length);
+      return {
+        id: hectorPlaybackSequenceRef.current,
+        kind: 'image' as const,
+        src: HECTOR_LATER_CAPTURE_IMAGES[imageIndex],
+      };
+    });
+
+    setHectorPlaybackQueue((currentQueue) => [...currentQueue, ...newCaptureMedia]);
+  }, [gameState, hectorPlayer, viewerPlayer]);
 
   const localPreviewState = pendingMoves.reduce((state, move) => applyMove(state, move), gameState);
   const remotePendingMoves =
@@ -147,6 +205,53 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
     !isSubmitting &&
     (localPreviewState.status === 'FINISHED' || pendingMoves.length >= maxPlayableMoveCount);
   const showMoveControls = viewerPlayer !== 'spectator' && isMyTurn && gameState.status === 'PLAYING' && !isSubmitting;
+  const sharedPendingPreview = gameState.pendingPreview;
+  const sharedPendingMoves = sharedPendingPreview?.moves ?? [];
+  const sharedPreviewState = sharedPendingMoves.reduce((state, move) => applyMove(state, move), gameState);
+  const sharedPreviewCanConfirm = Boolean(
+    sharedPendingPreview &&
+    sharedPendingPreview.player === gameState.currentPlayer &&
+    sharedPendingMoves.length > 0 &&
+    (sharedPreviewState.status === 'FINISHED' || sharedPendingMoves.length >= maxPlayableMoveCount)
+  );
+  const isWaitingToConfirm = isMyTurn ? canConfirmMoves : sharedPreviewCanConfirm;
+  const confirmationKey =
+    viewerPlayer !== 'spectator' &&
+    connected &&
+    !isSubmitting &&
+    gameState.status === 'PLAYING' &&
+    isRolledTurn &&
+    isWaitingToConfirm &&
+    sharedPendingPreview
+    ? `${gameState.turnNumber}:${gameState.currentPlayer}:${sharedPendingPreview.updatedAt}`
+    : null;
+  const confirmationUpdatedAt = confirmationKey ? sharedPendingPreview?.updatedAt ?? null : null;
+  const shouldShowThinkReminder =
+    confirmationKey !== null &&
+    timedOutConfirmationKey === confirmationKey &&
+    dismissedConfirmationKey !== confirmationKey;
+
+  const dismissThinkReminder = React.useCallback(() => {
+    if (confirmationKey) setDismissedConfirmationKey(confirmationKey);
+  }, [confirmationKey]);
+
+  useEffect(() => {
+    if (
+      !confirmationKey ||
+      confirmationUpdatedAt === null ||
+      timedOutConfirmationKey === confirmationKey ||
+      dismissedConfirmationKey === confirmationKey
+    ) {
+      return;
+    }
+
+    const delay = Math.max(0, confirmationUpdatedAt + CONFIRM_REMINDER_DELAY_MS - Date.now());
+    const timer = window.setTimeout(() => {
+      setTimedOutConfirmationKey(confirmationKey);
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [confirmationKey, confirmationUpdatedAt, dismissedConfirmationKey, timedOutConfirmationKey]);
 
   // Filter for currently selected piece
   const highlightedDestinations = selectedPoint !== null
@@ -445,27 +550,64 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
         </div>
       </aside>
 
-      {hectorPlayback.remaining > 0 && (
+      {currentHectorPlayback && (
         <div className="pointer-events-none fixed inset-0 z-[2000] flex items-center justify-center bg-[var(--navy)]/70 p-6">
+          {currentHectorPlayback.kind === 'video' ? (
+            <video
+              key={currentHectorPlayback.id}
+              src={currentHectorPlayback.src}
+              aria-label="Hector has captured a checker"
+              onLoadedData={(event) => {
+                const video = event.currentTarget;
+                if (video.dataset.playbackStarted) return;
+                video.dataset.playbackStarted = 'true';
+                void video.play().catch(() => {
+                  // Mobile browsers may block sound on remotely triggered playback.
+                  video.muted = true;
+                  void video.play().catch(finishHectorPlayback);
+                });
+              }}
+              onEnded={finishHectorPlayback}
+              onError={finishHectorPlayback}
+              loop={false}
+              playsInline
+              className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-cover shadow-2xl"
+            />
+          ) : (
+            <Image
+              key={currentHectorPlayback.id}
+              src={currentHectorPlayback.src}
+              alt="Hector has captured a checker"
+              width={736}
+              height={552}
+              onError={finishHectorPlayback}
+              className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-cover shadow-2xl"
+            />
+          )}
+        </div>
+      )}
+
+      {shouldShowThinkReminder && (
+        <div className="pointer-events-none fixed inset-0 z-[2100] flex items-center justify-center bg-[var(--navy)]/70 p-6">
           <video
-            key={hectorPlayback.sequence}
-            src="/assets/images/badMoves/bad-move.mp4"
-            aria-label="Hector has captured a checker"
+            key={confirmationKey ?? 'think-reminder'}
+            src={THINK_VIDEO_SRC}
+            aria-label="Confirm your move reminder"
             onLoadedData={(event) => {
               const video = event.currentTarget;
               if (video.dataset.playbackStarted) return;
               video.dataset.playbackStarted = 'true';
               void video.play().catch(() => {
-                // Mobile browsers may block sound on remotely triggered playback.
+                // Mobile browsers may block sound on an automatic reminder.
                 video.muted = true;
-                void video.play().catch(finishHectorPlayback);
+                void video.play().catch(dismissThinkReminder);
               });
             }}
-            onEnded={finishHectorPlayback}
-            onError={finishHectorPlayback}
+            onEnded={dismissThinkReminder}
+            onError={dismissThinkReminder}
             loop={false}
             playsInline
-            className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-cover shadow-2xl"
+            className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-contain shadow-2xl"
           />
         </div>
       )}

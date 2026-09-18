@@ -479,8 +479,9 @@ body:has(.game-shell),
   z-index: 5000;
   display: grid;
   place-items: center;
-  overflow: hidden;
-  padding: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: clamp(16px, 5vw, 24px);
   color: #f5f0e7;
   background: rgba(14, 52, 59, 0.72);
   backdrop-filter: blur(7px);
@@ -529,7 +530,8 @@ body:has(.game-shell),
   position: relative;
   z-index: 1;
   width: min(100%, 600px);
-  padding: clamp(44px, 8vw, 76px) 24px 48px;
+  min-width: 0;
+  padding: clamp(44px, 8vw, 76px) clamp(16px, 5vw, 24px) 48px;
   text-align: center;
   animation: victory-card-up 0.8s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
@@ -547,6 +549,7 @@ body:has(.game-shell),
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 3px;
+  overflow-wrap: anywhere;
 }
 
 .victory-card h2 {
@@ -554,6 +557,7 @@ body:has(.game-shell),
   color: #f8f3ea;
   font: 400 clamp(38px, 7vw, 76px) / 0.95 Georgia, serif;
   letter-spacing: -3px;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
@@ -561,6 +565,7 @@ body:has(.game-shell),
   margin: 22px 0 117px;
   color: rgba(242, 238, 227, 0.7);
   font: italic 400 clamp(15px, 2vw, 18px) / 1.5 Georgia, serif;
+  overflow-wrap: anywhere;
 }
 
 .victory-play-again-button {
@@ -568,6 +573,7 @@ body:has(.game-shell),
   align-items: center;
   gap: 13px;
   min-height: 49px;
+  max-width: 100%;
   padding: 0 19px;
   border: 1px solid rgba(245, 238, 227, 0.38);
   border-radius: 5px;
@@ -616,8 +622,24 @@ body:has(.game-shell),
 @media (max-width: 520px) {
   .victory-card { padding-top: 38px; }
   .victory-kicker { margin-bottom: 20px; font-size: 8px; letter-spacing: 2.3px; }
-  .victory-card h2 { letter-spacing: -1.8px; }
-  .victory-subtitle { margin-bottom: 111px; }
+  .victory-card h2 {
+    font-size: clamp(32px, 10vw, 48px);
+    line-height: 1;
+    letter-spacing: clamp(-2px, -0.4vw, -1px);
+  }
+  .victory-subtitle {
+    margin: 18px auto clamp(70px, 24vw, 111px);
+    max-inline-size: 34ch;
+    font-size: clamp(14px, 4.2vw, 16px);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 650px) {
+  .victory-card { padding-top: 28px; padding-bottom: 32px; }
+  .victory-card-line { margin-bottom: 16px; }
+  .victory-kicker { margin-bottom: 16px; }
+  .victory-card h2 { font-size: clamp(32px, 9vh, 54px); }
+  .victory-subtitle { margin-top: 16px; margin-bottom: clamp(42px, 10vh, 80px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

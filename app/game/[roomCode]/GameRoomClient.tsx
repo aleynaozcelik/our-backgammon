@@ -33,25 +33,155 @@ interface GameRoomClientProps {
 
 const SYNC_POLL_INTERVAL_MS = 2000;
 type DevPreset = 'bar' | 'bearOff' | 'hit' | 'finish';
-type VictoryPreview = 'hector' | 'player';
+type VictoryOutcome = 'playerWin' | 'playerLoss' | 'hectorWin' | 'hectorLoss';
 
-const PLAYER_VICTORY_COPIES = [
-  {
-    label: 'BREAKING BACKGAMMON NEWS.',
-    winner: 'HECTOR NEEDS A REMATCH.',
-    subtitle: 'His checkers are still looking for the exit.',
-  },
-  {
-    label: 'OFFICIAL BOARD RULING.',
-    winner: 'THE BOARD HAS A NEW BOSS.',
-    subtitle: 'Hector is reviewing the rulebook upside down.',
-  },
-  {
-    label: 'THE DICE HAVE SPOKEN.',
-    winner: 'HECTOR HAS BEEN HUMBLED.',
-    subtitle: 'A brave effort. A memorable defeat.',
-  },
-] as const;
+type VictoryCopy = {
+  label: string;
+  winner: string;
+  subtitle: string;
+};
+
+type VictoryPreview = {
+  key: string;
+  outcome: VictoryOutcome;
+};
+
+const VICTORY_COPY_POOLS: Record<VictoryOutcome, readonly VictoryCopy[]> = {
+  playerWin: [
+    // Existing player-win messages.
+    {
+      label: 'BREAKING BACKGAMMON NEWS.',
+      winner: 'HECTOR NEEDS A REMATCH.',
+      subtitle: 'His checkers are still looking for the exit.',
+    },
+    {
+      label: 'OFFICIAL BOARD RULING.',
+      winner: 'THE BOARD HAS A NEW BOSS.',
+      subtitle: 'Hector is reviewing the rulebook upside down.',
+    },
+    {
+      label: 'THE DICE HAVE SPOKEN.',
+      winner: 'HECTOR HAS BEEN HUMBLED.',
+      subtitle: 'A brave effort. A memorable defeat.',
+    },
+    {
+      label: 'UPSET OF THE CENTURY.',
+      winner: 'YOU BEAT HECTOR.',
+      subtitle: 'He has requested a quieter board.',
+    },
+    {
+      label: 'TABLE TALK: OVER.',
+      winner: 'HECTOR RAN OUT OF MOVES.',
+      subtitle: 'Your checkers did all the talking.',
+    },
+  ],
+  playerLoss: [
+    {
+      label: 'TACTICAL WEATHER REPORT.',
+      winner: 'HECTOR TOOK THE ROUND.',
+      subtitle: 'Your comeback missed the bus.',
+    },
+    {
+      label: 'DICE INVESTIGATION.',
+      winner: 'THE BOARD BETRAYED YOU.',
+      subtitle: 'Hector claims it was all skill.',
+    },
+    {
+      label: 'CLOSE. ISH.',
+      winner: 'HECTOR ESCAPED AGAIN.',
+      subtitle: 'Your checkers need a pep talk.',
+    },
+    {
+      label: 'OFFICIAL BAD NEWS.',
+      winner: 'YOU LOST TO HECTOR.',
+      subtitle: 'The rematch is already judging you.',
+    },
+    {
+      label: 'POST-GAME REPORT.',
+      winner: 'HECTOR GOT THERE FIRST.',
+      subtitle: 'You may file a complaint in crayon.',
+    },
+  ],
+  hectorWin: [
+    // Existing Hector-win message — kept exactly as requested.
+    {
+      label: 'The student has escaped.',
+      winner: 'WAIT… YOU ACTUALLY WON?!',
+      subtitle: 'Something went terribly wrong.',
+    },
+    {
+      label: 'THE HAT STAYS ON.',
+      winner: 'HECTOR OWNS THE BOARD.',
+      subtitle: 'The dice have joined his fan club.',
+    },
+    {
+      label: 'BOARD STATUS: CLAIMED.',
+      winner: 'HECTOR TAKES THE ROUND.',
+      subtitle: 'A very suspicious masterclass.',
+    },
+    {
+      label: 'HERO MODE: ACTIVE.',
+      winner: 'HECTOR DID IT AGAIN.',
+      subtitle: 'Your checkers are filing a complaint.',
+    },
+    {
+      label: 'THE DICE HAVE SPOKEN.',
+      winner: 'HECTOR FOUND THE EXIT.',
+      subtitle: 'The board is checking the replay.',
+    },
+  ],
+  hectorLoss: [
+    {
+      label: 'UNEXPECTED DEVELOPMENT.',
+      winner: 'HECTOR HAS BEEN HUMBLED.',
+      subtitle: 'The board chose chaos today.',
+    },
+    {
+      label: 'DICE BETRAYAL.',
+      winner: 'HECTOR LOST THE PLOT.',
+      subtitle: 'His checkers took the scenic route.',
+    },
+    {
+      label: 'OFFICIAL BOARD RULING.',
+      winner: 'THE STUDENT WON THIS ONE.',
+      subtitle: 'No appeals will be accepted.',
+    },
+    {
+      label: 'REMATCH FUEL ACQUIRED.',
+      winner: 'HECTOR NEEDS A REMATCH.',
+      subtitle: 'He is blaming the table already.',
+    },
+    {
+      label: 'THE HAT NEEDS A BREAK.',
+      winner: 'HECTOR TOOK THE SCENIC ROUTE.',
+      subtitle: 'Even the dice looked surprised.',
+    },
+  ],
+};
+
+function getHectorPlayer(playersInfo: { player1: string; player2: string }): Player | null {
+  if (playersInfo.player1.trim().toLowerCase() === 'hector') return 'player1';
+  if (playersInfo.player2.trim().toLowerCase() === 'hector') return 'player2';
+  return null;
+}
+
+function getVictoryOutcome(
+  winner: Player,
+  viewerPlayer: Player | 'spectator',
+  hectorPlayer: Player | null,
+): VictoryOutcome | null {
+  if (!hectorPlayer) return null;
+
+  if (viewerPlayer === 'spectator') {
+    return winner === hectorPlayer ? 'hectorWin' : 'hectorLoss';
+  }
+
+  if (viewerPlayer === hectorPlayer) {
+    return winner === hectorPlayer ? 'hectorWin' : 'hectorLoss';
+  }
+
+  return winner === viewerPlayer ? 'playerWin' : 'playerLoss';
+}
 
 export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const router = useRouter();
@@ -68,6 +198,7 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const [devAutoOpponent, setDevAutoOpponent] = useState(false);
   const [devPanelOpen, setDevPanelOpen] = useState(isGameDevToolsEnabled());
   const [victoryPreview, setVictoryPreview] = useState<VictoryPreview | null>(null);
+  const [lastVictoryCopyIndexes, setLastVictoryCopyIndexes] = useState<Partial<Record<VictoryOutcome, number>>>({});
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [inviteCopyError, setInviteCopyError] = useState(false);
@@ -79,8 +210,21 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const submittingMovesRef = React.useRef(false);
   const rollingDiceRef = React.useRef(false);
   const devAutoOpponentRef = React.useRef(false);
+  const victoryPreviewCountRef = React.useRef(0);
 
   const supabase = React.useMemo(() => createClient(), []);
+
+  const openVictoryPreview = React.useCallback((outcome: VictoryOutcome) => {
+    victoryPreviewCountRef.current += 1;
+    setVictoryPreview({ key: `preview:${victoryPreviewCountRef.current}:${outcome}`, outcome });
+  }, []);
+
+  const rememberVictoryCopy = React.useCallback((outcome: VictoryOutcome, copyIndex: number) => {
+    setLastVictoryCopyIndexes((currentIndexes) => {
+      if (currentIndexes[outcome] === copyIndex) return currentIndexes;
+      return { ...currentIndexes, [outcome]: copyIndex };
+    });
+  }, []);
 
   const setupRealtime = React.useCallback((gameId: string) => {
     supabase.removeAllChannels(); // Temizle
@@ -517,39 +661,26 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
 
   if (!gameState) return null;
 
-  const hectorPlayer: Player | null =
-    playersInfo.player1.trim().toLowerCase() === 'hector'
-      ? 'player1'
-      : playersInfo.player2.trim().toLowerCase() === 'hector'
-        ? 'player2'
-        : null;
+  const hectorPlayer = getHectorPlayer(playersInfo);
   const waitingForOpponent = playersInfo.player2 === 'Waiting...';
   const activePlayerName = gameState.currentPlayer === 'player1' ? playersInfo.player1 : playersInfo.player2;
   const finishedWinner = gameState.status === 'FINISHED' ? gameState.winner : null;
-  const nonHectorPlayer: Player | null = hectorPlayer === 'player1'
-    ? 'player2'
-    : hectorPlayer === 'player2'
-      ? 'player1'
-      : viewerPlayer === 'spectator'
-        ? null
-        : viewerPlayer;
-  const previewWinner = victoryPreview === 'hector'
-    ? hectorPlayer ?? (viewerPlayer === 'player1' ? 'player2' : 'player1')
-    : victoryPreview === 'player'
-      ? nonHectorPlayer
-      : null;
-  const overlayWinner = finishedWinner ?? previewWinner;
-  const isVictoryPreview = finishedWinner === null && previewWinner !== null;
-  const isHectorVictory = overlayWinner === hectorPlayer || (isVictoryPreview && victoryPreview === 'hector');
-  const overlayCopy = !overlayWinner || isHectorVictory
-    ? undefined
-    : hectorPlayer
-      ? PLAYER_VICTORY_COPIES[gameState.turnNumber % PLAYER_VICTORY_COPIES.length]
-      : {
-        label: 'A GAME WELL PLAYED.',
-        winner: `${(overlayWinner === 'player1' ? playersInfo.player1 : playersInfo.player2).toUpperCase()} WINS.`,
-        subtitle: 'The dice have no notes.',
-      };
+  const finishedVictoryOutcome = finishedWinner
+    ? getVictoryOutcome(finishedWinner, viewerPlayer, hectorPlayer)
+    : null;
+  const isVictoryPreview = finishedWinner === null && victoryPreview !== null;
+  const victoryOutcome = finishedVictoryOutcome ?? (isVictoryPreview ? victoryPreview?.outcome ?? null : null);
+  const victoryCopies = victoryOutcome ? VICTORY_COPY_POOLS[victoryOutcome] : undefined;
+  const genericVictoryCopy = finishedWinner && !hectorPlayer
+    ? {
+      label: 'A GAME WELL PLAYED.',
+      winner: `${(finishedWinner === 'player1' ? playersInfo.player1 : playersInfo.player2).toUpperCase()} WINS.`,
+      subtitle: 'The dice have no notes.',
+    }
+    : null;
+  const overlayKey = finishedWinner && victoryOutcome
+    ? `finished:${gameState.version}:${finishedWinner}:${viewerPlayer}:${hectorPlayer}`
+    : victoryPreview?.key ?? (finishedWinner ? `finished:${gameState.version}:${finishedWinner}` : null);
 
   return (
     <div className="game-room flex h-full w-full max-w-[1400px] flex-col gap-2 p-1 sm:gap-3 sm:p-4">
@@ -652,18 +783,31 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
                 <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--teal)]">Victory preview · local only</div>
                 <button
                   type="button"
-                  onClick={() => setVictoryPreview('hector')}
+                  onClick={() => openVictoryPreview('playerWin')}
+                  className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold"
+                >
+                  Preview: I win
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openVictoryPreview('playerLoss')}
+                  className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold"
+                >
+                  Preview: I lose
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openVictoryPreview('hectorWin')}
                   className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold"
                 >
                   Preview: Hector wins
                 </button>
                 <button
                   type="button"
-                  onClick={() => setVictoryPreview('player')}
-                  disabled={!nonHectorPlayer}
-                  className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={() => openVictoryPreview('hectorLoss')}
+                  className="rounded border border-[var(--line)] px-3 py-2 text-left text-xs font-bold"
                 >
-                  Preview: I win
+                  Preview: Hector loses
                 </button>
               </div>
               <button
@@ -731,9 +875,13 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
         <Link href="/"><ArrowLeft size={13} /> Back to lobby</Link>
       </footer>
 
-      {overlayWinner && (
+      {(victoryCopies || genericVictoryCopy) && (
         <VictoryOverlay
-          {...(overlayCopy ?? {})}
+          key={overlayKey ?? 'victory'}
+          copies={victoryCopies}
+          avoidCopyIndex={victoryOutcome ? lastVictoryCopyIndexes[victoryOutcome] : undefined}
+          onCopyChosen={victoryOutcome ? (copyIndex) => rememberVictoryCopy(victoryOutcome, copyIndex) : undefined}
+          {...(genericVictoryCopy ?? {})}
           onPlayAgain={isVictoryPreview ? () => setVictoryPreview(null) : handleRematch}
         />
       )}
