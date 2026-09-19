@@ -7,7 +7,7 @@
   gap: var(--room-frame-gap);
   padding: var(--room-frame-padding);
   width: var(--game-room-frame-width, 100%);
-  aspect-ratio: 1.96;
+  aspect-ratio: var(--game-room-frame-ratio, 1.96);
   flex: none;
   border: 1px solid #faf7ef;
   border-radius: 13px;
@@ -59,7 +59,7 @@
   .gameRoomStack { gap: 3px; }
 }
 @media (orientation: landscape) and (max-height: 650px) {
-  .gameRoomFrame { --room-frame-padding: calc(10px * var(--game-room-scale, 1)); --room-frame-gap: calc(8px * var(--game-room-scale, 1)); --room-tray-width: calc(25px * var(--game-room-scale, 1)); aspect-ratio: 2.12; border-radius: 8px; }
+  .gameRoomFrame { --room-frame-padding: 6px; --room-frame-gap: 5px; --room-tray-width: 24px; aspect-ratio: var(--game-room-frame-ratio, 2.12); border-radius: 8px; }
   .gameRoomBoard { --room-board-inset: 7px; padding: 15px var(--room-board-inset); }
   .gameRoomStack { gap: 1px; }
   .gameRoomPointTouch :global(.board-point-number-top) { top: -13px; }

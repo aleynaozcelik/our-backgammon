@@ -10,8 +10,9 @@ export function GameViewport({ children }: { children: ReactNode }) {
       const { width, height } = entry.contentRect;
       const compact = window.matchMedia('(orientation: landscape) and (max-height: 650px)').matches;
       const portrait = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
-      const ratio = compact ? 2.12 : portrait ? 1.22 : window.innerWidth >= 1500 ? 2.02 : 1.96;
-      const frameWidth = Math.max(1, Math.min(width, height * ratio, window.innerWidth >= 1500 ? 1160 : 1060));
+      const ratio = compact ? Math.max(1.8, Math.min(3.2, width / Math.max(1, height))) : portrait ? 1.22 : window.innerWidth >= 1500 ? 2.02 : 1.96;
+      const frameWidth = Math.max(1, Math.min(width, height * ratio, compact ? width : window.innerWidth >= 1500 ? 1160 : 1060));
+      element.style.setProperty('--game-room-frame-ratio', `${ratio}`);
       element.style.setProperty('--game-room-frame-width', `${frameWidth}px`);
       element.style.setProperty('--game-room-scale', `${Math.max(.75, Math.min(1.2, frameWidth / ratio / 260))}`);
       element.parentElement?.style.setProperty('--game-board-row-width', `${frameWidth}px`);

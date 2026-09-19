@@ -497,6 +497,23 @@ body:has(.game-shell),
 /* Match Ocean: leave the full playing area available on short landscape screens. */
 @media (orientation: landscape) and (max-height: 650px) {
   .game-table-heading { display: none; }
+  .game-room {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 34px minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 2px;
+    padding: max(2px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right)) max(2px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+  }
+  .game-room .game-topbar { grid-column: 1; grid-row: 1; height: 34px; border: 0; gap: 0; }
+  .game-room .game-brand-logo { display: none; }
+  .game-room .game-player-row { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; margin: 0; align-self: center; gap: 8px; }
+  .game-room .game-player { min-width: 0; }
+  .game-room .game-player > span:not(.game-player-dot) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .game-room .game-player small { display: none; }
+  .game-room .game-viewport { grid-column: 1 / -1; grid-row: 2; min-width: 0; height: 100%; }
+  .game-room .game-summary-finished { grid-column: 1 / -1; grid-row: 3; }
+  .game-room .game-footer { display: none; }
 }
 
 /* Victory overlay */
