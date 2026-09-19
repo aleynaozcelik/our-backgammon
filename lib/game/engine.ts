@@ -80,6 +80,9 @@ export function getMaxPlayableMoveCount(state: GameState): number {
 
 export function endTurn(state: GameState): GameState {
   const newState = { ...state };
+  if (state.lastCapture?.turnNumber === state.turnNumber) {
+    newState.lastCapture = { ...state.lastCapture, startsAt: Date.now() + 1000 };
+  }
   newState.currentPlayer = state.currentPlayer === 'player1' ? 'player2' : 'player1';
   newState.turnNumber += 1;
   newState.dice = [];

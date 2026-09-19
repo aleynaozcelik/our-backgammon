@@ -22,6 +22,8 @@ export interface GameState {
   winner: Player | null;
   turnNumber: number;
   version: number;
+  firstCaptureTurn?: Partial<Record<Player, number>>;
+  lastCapture?: { player: Player; turnNumber: number; startsAt: number };
   lastPass?: { player: Player; turnNumber: number };
   pendingPreview?: PendingPreview | null;
 }

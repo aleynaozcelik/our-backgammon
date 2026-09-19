@@ -102,6 +102,12 @@ export function applyMove(state: GameState, move: Move): GameState {
       destPoint.player = player;
       destPoint.count = 1;
       newState.bar[opponent] += 1;
+      newState.firstCaptureTurn = {
+        ...newState.firstCaptureTurn,
+        [player]: newState.firstCaptureTurn?.[player] ?? state.turnNumber,
+      };
+      // Persisted with the committed move; both clients use the same playback clock.
+      newState.lastCapture = { player, turnNumber: state.turnNumber, startsAt: Date.now() + 1000 };
     } else {
       // Normal placement
       destPoint.player = player;

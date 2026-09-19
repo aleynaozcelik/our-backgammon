@@ -145,12 +145,39 @@ body {
 }
 
 @keyframes hector-capture {
-  from { opacity: 0; transform: scale(0.68); }
+  from { opacity: 0; transform: translateY(18px) scale(0.94); }
   to { opacity: 1; transform: scale(1); }
 }
 
 .hector-capture {
-  animation: hector-capture 320ms ease-out both;
+  animation: hector-capture 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes hector-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hector-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes hector-capture-out {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(10px) scale(0.97); }
+}
+
+.hector-capture-overlay {
+  animation: hector-backdrop-in 550ms ease-out both;
+}
+
+.hector-capture-overlay.hector-capture-leaving {
+  animation: hector-backdrop-out 450ms ease-in-out both;
+}
+
+.hector-capture-leaving .hector-capture {
+  animation: hector-capture-out 450ms ease-in-out both;
 }
 
 @media (max-width: 640px) and (orientation: portrait) {

@@ -59,6 +59,8 @@ function createDevPresetState(baseState: GameState, preset: DevPreset, currentPl
     status: 'PLAYING',
     winner: null,
     pendingPreview: null,
+    firstCaptureTurn: {},
+    lastCapture: undefined,
   };
 
   if (preset === 'bar') {
