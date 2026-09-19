@@ -713,7 +713,7 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
       <div className="game-table-heading">
         <div>
           <p className="game-table-eyebrow">GOOD TEAM. A LITTLE COMPETITION.</p>
-          <h1>Make time for a good game.</h1>
+          <h1>Beautiful things take time.</h1>
         </div>
         <span className="game-table-label">TURKISH X SPANISH <b>01</b></span>
       </div>
