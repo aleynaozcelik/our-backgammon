@@ -30,22 +30,22 @@ type HectorCaptureMedia = {
 
 const HECTOR_FIRST_CAPTURE_VIDEO = '/assets/images/badMoves/bad-move.mp4';
 const HECTOR_LATER_CAPTURE_IMAGES = [
-  '/assets/images/badMoves/bad-move2.jfif',
-  '/assets/images/badMoves/bad_move3.jfif',
+  '/assets/images/badMoves/bad-move2.JPG',
+  '/assets/images/badMoves/bad_move3.JPG',
+  '/assets/images/badMoves/bad_move4.JPG',
   '/assets/images/badMoves/bad-move5.gif',
   '/assets/images/badMoves/bad-move6.jpeg',
   '/assets/images/badMoves/bad-move7.jpeg',
   '/assets/images/badMoves/bad-move8.jpeg',
   '/assets/images/badMoves/bad-move9.jpeg',
-  '/assets/images/badMoves/bad-move10.jfif',
-  '/assets/images/badMoves/bad-move11.jfif',
+  '/assets/images/badMoves/bad-move10.JPG',
+  '/assets/images/badMoves/bad-move11.JPG',
 ] as const;
 const NICE_CAPTURE_IMAGES = [
-  '/assets/images/niceMoves/nice-move.jfif',
   '/assets/images/niceMoves/nice-move2.jpeg',
   '/assets/images/niceMoves/nice-move3.jpeg',
-  '/assets/images/niceMoves/nice-move4.jfif',
-  '/assets/images/niceMoves/nice-move5.jfif',
+  '/assets/images/niceMoves/nice-move4.JPG',
+  '/assets/images/niceMoves/nice-move5.JPG',
 ] as const;
 const HECTOR_CAPTURE_IMAGE_DURATION_MS = 2400;
 const HECTOR_CAPTURE_EXIT_DURATION_MS = 450;
