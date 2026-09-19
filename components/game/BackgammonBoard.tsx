@@ -65,6 +65,7 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
   const [hectorPlaybackQueue, setHectorPlaybackQueue] = useState<HectorCaptureMedia[]>([]);
   const [isHectorPlaybackLeaving, setIsHectorPlaybackLeaving] = useState(false);
   const [readyCaptureId, setReadyCaptureId] = useState<number | null>(null);
+  const [loadedCaptureId, setLoadedCaptureId] = useState<number | null>(null);
   const [timedOutConfirmationKey, setTimedOutConfirmationKey] = useState<string | null>(null);
   const [dismissedConfirmationKey, setDismissedConfirmationKey] = useState<string | null>(null);
   const lastDiceTurn = useRef<number | null>(null);
@@ -75,7 +76,7 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
     }
   }, [gameState.dice.length, gameState.turnNumber]);
   const previousGameStateRef = useRef<GameState | null>(null);
-  const lastHectorCaptureVersionRef = useRef(-1);
+  const lastCaptureKeyRef = useRef<string | null>(null);
   const hectorPlaybackSequenceRef = useRef(0);
   const publishedPendingMovesRef = useRef<string | null>(null);
 
@@ -104,12 +105,14 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
   }, [isHectorPlaybackLeaving]);
 
   useEffect(() => {
-    if (!currentHectorPlayback || currentHectorPlayback.kind !== 'image') return;
+    if (!currentHectorPlayback || currentHectorPlayback.kind !== 'image' ||
+      loadedCaptureId !== currentHectorPlayback.id) return;
 
     const timer = window.setTimeout(finishHectorPlayback,
-      Math.max(0, currentHectorPlayback.startsAt + HECTOR_CAPTURE_IMAGE_DURATION_MS - Date.now()));
+      Math.max(HECTOR_CAPTURE_IMAGE_DURATION_MS,
+        currentHectorPlayback.startsAt + HECTOR_CAPTURE_IMAGE_DURATION_MS - Date.now()));
     return () => window.clearTimeout(timer);
-  }, [currentHectorPlayback, finishHectorPlayback]);
+  }, [currentHectorPlayback, finishHectorPlayback, loadedCaptureId]);
 
   const pendingMoves = useMemo(
     () => pendingMoveState.version === gameState.version ? pendingMoveState.moves : [],
@@ -148,7 +151,7 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
       (previousGameState.status === 'FINISHED' && gameState.status === 'PLAYING')
     );
     if (hasStartedNewGame) {
-      lastHectorCaptureVersionRef.current = -1;
+      lastCaptureKeyRef.current = null;
       setHectorPlaybackQueue([]);
       setIsHectorPlaybackLeaving(false);
     }
@@ -159,18 +162,13 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
 
     const capture = gameState.lastCapture;
     if (!capture || (capture.turnNumber >= gameState.turnNumber && gameState.status !== 'FINISHED')) return;
-    if (previousGameState.lastCapture?.turnNumber === capture.turnNumber &&
-      previousGameState.turnNumber > capture.turnNumber) return;
+    const captureKey = `${capture.player}:${capture.turnNumber}:${capture.startsAt}`;
+    if (lastCaptureKeyRef.current === captureKey) return;
     const capturingPlayer = capture.player;
     const isHectorCapture = capturingPlayer === hectorPlayer;
-    if (
-      gameState.version <= previousGameState.version ||
-      gameState.version <= lastHectorCaptureVersionRef.current ||
-      gameState.pendingPreview ||
-      (gameState.turnNumber <= previousGameState.turnNumber && gameState.status !== 'FINISHED')
-    ) return;
-
-    lastHectorCaptureVersionRef.current = gameState.version;
+    lastCaptureKeyRef.current = captureKey;
+    // Do not replay an old reaction when reconnecting to a room.
+    if (Date.now() - capture.startsAt > 60_000) return;
     // Show one reaction per committed turn, regardless of how many checkers were hit.
     // Use persisted game data so refreshes and separate clients choose the same media.
     const isFirstHectorCapture = isHectorCapture &&
@@ -596,11 +594,9 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
                 if (video.dataset.playbackStarted) return;
                 video.dataset.playbackStarted = 'true';
                 const elapsed = Math.max(0, (Date.now() - currentHectorPlayback.startsAt) / 1000);
-                if (Number.isFinite(video.duration) && elapsed >= video.duration) {
-                  finishHectorPlayback();
-                  return;
-                }
-                video.currentTime = elapsed;
+                // A delayed download must not skip the entire reaction.
+                video.currentTime = Number.isFinite(video.duration) && elapsed < video.duration - 1
+                  ? elapsed : 0;
                 void video.play().catch(() => {
                   // Mobile browsers may block sound on remotely triggered playback.
                   video.muted = true;
@@ -621,6 +617,7 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
               unoptimized={currentHectorPlayback.src.endsWith('.gif')}
               width={736}
               height={552}
+              onLoad={() => setLoadedCaptureId(currentHectorPlayback.id)}
               onError={finishHectorPlayback}
               className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-cover shadow-2xl"
             />
