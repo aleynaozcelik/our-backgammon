@@ -2,6 +2,7 @@ import reactionMedia from '@/lib/game/reaction-media.json';
 import roomStyles from './GameRoomBoard.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import { GameState, Player, Move } from '@/types/game';
 import { PointUI } from './PointUI';
 import { Checker } from './Checker';
@@ -31,6 +32,8 @@ type HectorCaptureMedia = {
 
 const HECTOR_CAPTURE_IMAGE_DURATION_MS = 2400;
 const HECTOR_CAPTURE_EXIT_DURATION_MS = 450;
+const CAPTURE_LOAD_TIMEOUT_MS = 6_000;
+const CAPTURE_MAX_DURATION_MS = 20_000;
 const THINK_IMAGE_SRC = '/assets/images/think/think.gif';
 const CONFIRM_REMINDER_DELAY_MS = 15_000;
 const THINK_REMINDER_DURATION_MS = 2_000;
@@ -96,6 +99,28 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
         currentHectorPlayback.startsAt + HECTOR_CAPTURE_IMAGE_DURATION_MS - Date.now()));
     return () => window.clearTimeout(timer);
   }, [currentHectorPlayback, finishHectorPlayback, loadedCaptureId]);
+
+  // Media events may never fire on mobile (blocked playback or a stalled download).
+  useEffect(() => {
+    if (!currentHectorPlayback || readyCaptureId !== currentHectorPlayback.id) return;
+    const deadline = Date.now() + CAPTURE_MAX_DURATION_MS;
+    const timer = window.setTimeout(finishHectorPlayback, CAPTURE_MAX_DURATION_MS);
+    const checkDeadline = () => {
+      if (Date.now() >= deadline) finishHectorPlayback();
+    };
+    document.addEventListener('visibilitychange', checkDeadline);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', checkDeadline);
+    };
+  }, [currentHectorPlayback, readyCaptureId, finishHectorPlayback]);
+
+  useEffect(() => {
+    if (!currentHectorPlayback || readyCaptureId !== currentHectorPlayback.id ||
+      loadedCaptureId === currentHectorPlayback.id) return;
+    const timer = window.setTimeout(finishHectorPlayback, CAPTURE_LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [currentHectorPlayback, readyCaptureId, loadedCaptureId, finishHectorPlayback]);
 
   const pendingMoves = useMemo(
     () => pendingMoveState.version === gameState.version ? pendingMoveState.moves : [],
@@ -569,35 +594,37 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
         </div>
       </aside>
 
-      {currentHectorPlayback && readyCaptureId === currentHectorPlayback.id && (
+      {currentHectorPlayback && readyCaptureId === currentHectorPlayback.id && createPortal(
         <div
           key={currentHectorPlayback.id}
           className={`hector-capture-overlay ${isHectorPlaybackLeaving ? 'hector-capture-leaving' : ''} pointer-events-none fixed inset-0 z-[2000] flex items-center justify-center bg-[var(--navy)]/70 p-6`}
         >
+          <button
+            type="button"
+            onClick={finishHectorPlayback}
+            aria-label="Close reaction"
+            className="pointer-events-auto absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full bg-white text-2xl text-[var(--navy)] shadow-lg"
+          >&times;</button>
           {currentHectorPlayback.kind === 'video' ? (
             <video
               key={currentHectorPlayback.id}
               src={currentHectorPlayback.src}
               aria-label={currentHectorPlayback.label}
-              onLoadedData={(event) => {
+              autoPlay
+              muted
+              preload="auto"
+              onCanPlay={(event) => {
                 const video = event.currentTarget;
                 if (video.dataset.playbackStarted) return;
                 video.dataset.playbackStarted = 'true';
-                const elapsed = Math.max(0, (Date.now() - currentHectorPlayback.startsAt) / 1000);
-                // A delayed download must not skip the entire reaction.
-                video.currentTime = Number.isFinite(video.duration) && elapsed < video.duration - 1
-                  ? elapsed : 0;
-                void video.play().catch(() => {
-                  // Mobile browsers may block sound on remotely triggered playback.
-                  video.muted = true;
-                  void video.play().catch(finishHectorPlayback);
-                });
+                void video.play().catch(finishHectorPlayback);
               }}
+              onPlaying={() => setLoadedCaptureId(currentHectorPlayback.id)}
               onEnded={finishHectorPlayback}
               onError={finishHectorPlayback}
               loop={false}
               playsInline
-              className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-cover shadow-2xl"
+              className="hector-capture max-h-[78dvh] w-[min(82vw,460px)] object-contain shadow-2xl"
             />
           ) : (
             <Image
@@ -609,10 +636,11 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
               height={552}
               onLoad={() => setLoadedCaptureId(currentHectorPlayback.id)}
               onError={finishHectorPlayback}
-              className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-cover shadow-2xl"
+              className="hector-capture max-h-[78dvh] w-[min(82vw,460px)] object-contain shadow-2xl"
             />
           )}
-        </div>
+        </div>,
+        document.body,
       )}
 
       {shouldShowThinkReminder && (
