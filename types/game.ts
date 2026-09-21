@@ -20,6 +20,8 @@ export interface GameState {
   currentPlayer: Player;
   status: 'WAITING' | 'PLAYING' | 'FINISHED';
   winner: Player | null;
+  /** Wins from completed rounds carried into a rematch in this room. */
+  matchScore?: Record<Player, number>;
   turnNumber: number;
   version: number;
   firstCaptureTurn?: Partial<Record<Player, number>>;

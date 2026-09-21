@@ -516,6 +516,30 @@ body:has(.game-shell),
   .game-room .game-footer { display: none; }
 }
 
+.game-match-status { display: flex; flex: 0 1 auto; min-width: 0; flex-direction: column; align-items: center; gap: 6px; padding-inline: 10px; text-align: center; }
+.game-match-score { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--navy); }
+.game-match-score-label { font-size: 7px; letter-spacing: 1.5px; }
+.game-match-score-value { display: flex; align-items: center; gap: 12px; font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.game-match-score-value b { min-width: 1.5ch; }
+.game-match-score-value > span { color: #7c8a88; font-size: 14px; }
+.game-player-row .game-player { min-width: 0; }
+.game-player-row .game-player > span:not(.game-player-dot) { overflow-wrap: anywhere; }
+@media (max-width: 700px) and (orientation: portrait) {
+  .game-player-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 6px; }
+  .game-player-row .game-player { gap: 6px; letter-spacing: 1px; }
+  .game-match-status { max-width: 140px; gap: 5px; padding-inline: 2px; }
+  .game-match-status .game-status { order: initial; width: auto; margin: 0; font-size: 7px; letter-spacing: .6px; }
+  .game-match-status .game-status i { flex-shrink: 0; }
+  .game-match-score { flex-direction: column; gap: 4px; }
+  .game-match-score-value { gap: 6px; font-size: 20px; }
+}
+@media (orientation: landscape) and (max-height: 650px) {
+  .game-match-status { gap: 3px; padding-inline: 2px; }
+  .game-match-score { gap: 6px; }
+  .game-match-score-label { font-size: 6px; }
+  .game-match-score-value { gap: 6px; font-size: 16px; }
+}
+
 /* Victory overlay */
 .victory-overlay {
   position: fixed;

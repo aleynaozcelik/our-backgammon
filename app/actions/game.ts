@@ -319,6 +319,10 @@ export async function restartGameAction(roomCode: string, playerId: string) {
     ...getInitialGameState(),
     status: 'PLAYING',
     version: state.version + 1,
+    matchScore: {
+      player1: (state.matchScore?.player1 ?? 0) + (state.winner === 'player1' ? 1 : 0),
+      player2: (state.matchScore?.player2 ?? 0) + (state.winner === 'player2' ? 1 : 0),
+    },
   };
 
   const { data: updatedGame, error: updateError } = await supabase

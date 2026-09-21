@@ -665,6 +665,10 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const waitingForOpponent = playersInfo.player2 === 'Waiting...';
   const activePlayerName = gameState.currentPlayer === 'player1' ? playersInfo.player1 : playersInfo.player2;
   const finishedWinner = gameState.status === 'FINISHED' ? gameState.winner : null;
+  const matchScore = {
+    player1: (gameState.matchScore?.player1 ?? 0) + (finishedWinner === 'player1' ? 1 : 0),
+    player2: (gameState.matchScore?.player2 ?? 0) + (finishedWinner === 'player2' ? 1 : 0),
+  };
   const finishedVictoryOutcome = finishedWinner
     ? getVictoryOutcome(finishedWinner, viewerPlayer, hectorPlayer)
     : null;
@@ -722,10 +726,16 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
           <span className="game-player-dot game-ivory-dot" />
           <span>{playersInfo.player1}<small>{viewerPlayer === 'player1' ? 'YOU' : 'IVORY'}</small></span>
         </div>
+        <div className="game-match-status">
         <span className="game-status" role="status">
           <i />
           {waitingForOpponent ? 'WAITING FOR OPPONENT' : gameState.status === 'FINISHED' ? `${gameState.winner === 'player1' ? playersInfo.player1 : playersInfo.player2} WINS` : `${activePlayerName}’S TURN`}
         </span>
+          <div className="game-match-score" role="status" aria-label={`Match score: ${playersInfo.player1} ${matchScore.player1}, ${playersInfo.player2} ${matchScore.player2}`}>
+            <span className="game-match-score-label">SCORE</span>
+            <span className="game-match-score-value"><b>{matchScore.player1}</b><span aria-hidden="true">-</span><b>{matchScore.player2}</b></span>
+          </div>
+        </div>
         <div className="game-player game-opponent">
           <span>{waitingForOpponent ? 'OPEN SEAT' : playersInfo.player2}<small>{viewerPlayer === 'player2' ? 'YOU' : waitingForOpponent ? 'INVITE A FRIEND' : 'OCEAN'}</small></span>
           <span className={`game-player-dot ${waitingForOpponent ? 'game-empty-dot' : 'game-teal-dot'}`} />
