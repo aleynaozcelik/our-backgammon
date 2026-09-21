@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "media:generate": "node scripts/generate-reaction-media.mjs",
+    "predev": "npm run media:generate",
+    "prebuild": "npm run media:generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

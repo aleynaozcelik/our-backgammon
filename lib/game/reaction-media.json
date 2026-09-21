@@ -1,0 +1,121 @@
+{
+  "first": {
+    "name": "bad-move.mp4",
+    "src": "/assets/images/badMoves/bad-move.mp4",
+    "kind": "video"
+  },
+  "bad": [
+    {
+      "name": "bad-move2.JPG",
+      "src": "/assets/images/badMoves/bad-move2.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move3.JPG",
+      "src": "/assets/images/badMoves/bad-move3.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move4.JPG",
+      "src": "/assets/images/badMoves/bad-move4.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move5.gif",
+      "src": "/assets/images/badMoves/bad-move5.gif",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move6.jpeg",
+      "src": "/assets/images/badMoves/bad-move6.jpeg",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move7.jpeg",
+      "src": "/assets/images/badMoves/bad-move7.jpeg",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move8.jpeg",
+      "src": "/assets/images/badMoves/bad-move8.jpeg",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move9.jpeg",
+      "src": "/assets/images/badMoves/bad-move9.jpeg",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move10.JPG",
+      "src": "/assets/images/badMoves/bad-move10.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move11.JPG",
+      "src": "/assets/images/badMoves/bad-move11.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move12.gif",
+      "src": "/assets/images/badMoves/bad-move12.gif",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move13.gif",
+      "src": "/assets/images/badMoves/bad-move13.gif",
+      "kind": "image"
+    },
+    {
+      "name": "bad-move14.gif",
+      "src": "/assets/images/badMoves/bad-move14.gif",
+      "kind": "image"
+    },
+    {
+      "name": "bad-moves15.gif",
+      "src": "/assets/images/badMoves/bad-moves15.gif",
+      "kind": "image"
+    }
+  ],
+  "nice": [
+    {
+      "name": "nice-move2.jpeg",
+      "src": "/assets/images/niceMoves/nice-move2.jpeg",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move3.jpeg",
+      "src": "/assets/images/niceMoves/nice-move3.jpeg",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move4.JPG",
+      "src": "/assets/images/niceMoves/nice-move4.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move5.JPG",
+      "src": "/assets/images/niceMoves/nice-move5.JPG",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move6.gif",
+      "src": "/assets/images/niceMoves/nice-move6.gif",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move7.gif",
+      "src": "/assets/images/niceMoves/nice-move7.gif",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move8.gif",
+      "src": "/assets/images/niceMoves/nice-move8.gif",
+      "kind": "image"
+    },
+    {
+      "name": "nice-move9.gif",
+      "src": "/assets/images/niceMoves/nice-move9.gif",
+      "kind": "image"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import reactionMedia from '@/lib/game/reaction-media.json';
 import roomStyles from './GameRoomBoard.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
@@ -28,29 +29,11 @@ type HectorCaptureMedia = {
   startsAt: number;
 };
 
-const HECTOR_FIRST_CAPTURE_VIDEO = '/assets/images/badMoves/bad-move.mp4';
-const HECTOR_LATER_CAPTURE_IMAGES = [
-  '/assets/images/badMoves/bad-move2.JPG',
-  '/assets/images/badMoves/bad_move3.JPG',
-  '/assets/images/badMoves/bad_move4.JPG',
-  '/assets/images/badMoves/bad-move5.gif',
-  '/assets/images/badMoves/bad-move6.jpeg',
-  '/assets/images/badMoves/bad-move7.jpeg',
-  '/assets/images/badMoves/bad-move8.jpeg',
-  '/assets/images/badMoves/bad-move9.jpeg',
-  '/assets/images/badMoves/bad-move10.JPG',
-  '/assets/images/badMoves/bad-move11.JPG',
-] as const;
-const NICE_CAPTURE_IMAGES = [
-  '/assets/images/niceMoves/nice-move2.jpeg',
-  '/assets/images/niceMoves/nice-move3.jpeg',
-  '/assets/images/niceMoves/nice-move4.JPG',
-  '/assets/images/niceMoves/nice-move5.JPG',
-] as const;
 const HECTOR_CAPTURE_IMAGE_DURATION_MS = 2400;
 const HECTOR_CAPTURE_EXIT_DURATION_MS = 450;
-const THINK_VIDEO_SRC = '/assets/images/think/think.mov';
+const THINK_IMAGE_SRC = '/assets/images/think/think.gif';
 const CONFIRM_REMINDER_DELAY_MS = 15_000;
+const THINK_REMINDER_DURATION_MS = 2_000;
 
 export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChange, viewerPlayer, hectorPlayer, connected = true }: BoardProps) {
   const [selectedPointState, setSelectedPointState] = useState<{ version: number; point: SelectedPoint }>({
@@ -174,14 +157,15 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
     const isFirstHectorCapture = isHectorCapture &&
       gameState.firstCaptureTurn?.[capturingPlayer] === capture.turnNumber;
     hectorPlaybackSequenceRef.current += 1;
-    const captureImages = isHectorCapture ? HECTOR_LATER_CAPTURE_IMAGES : NICE_CAPTURE_IMAGES;
+    const capturePool = isHectorCapture ? reactionMedia.bad : reactionMedia.nice;
+    const selectedMedia = isFirstHectorCapture
+      ? reactionMedia.first
+      : capturePool[capture.turnNumber % capturePool.length];
     const captureMedia: HectorCaptureMedia = {
       id: hectorPlaybackSequenceRef.current,
       startsAt: capture.startsAt,
-      kind: isFirstHectorCapture ? 'video' : 'image',
-      src: isFirstHectorCapture
-        ? HECTOR_FIRST_CAPTURE_VIDEO
-        : captureImages[capture.turnNumber % captureImages.length],
+      kind: selectedMedia.kind === 'video' ? 'video' : 'image',
+      src: selectedMedia.src,
       label: isHectorCapture ? 'Hector has captured a checker' : 'Nice move! Hector’s checker was captured',
     };
 
@@ -281,6 +265,12 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
 
     return () => window.clearTimeout(timer);
   }, [confirmationKey, confirmationUpdatedAt, dismissedConfirmationKey, timedOutConfirmationKey]);
+
+  useEffect(() => {
+    if (!shouldShowThinkReminder) return;
+    const timer = window.setTimeout(dismissThinkReminder, THINK_REMINDER_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [shouldShowThinkReminder, dismissThinkReminder]);
 
   // Filter for currently selected piece
   const highlightedDestinations = selectedPoint !== null
@@ -614,7 +604,7 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
               key={currentHectorPlayback.id}
               src={currentHectorPlayback.src}
               alt={currentHectorPlayback.label}
-              unoptimized={currentHectorPlayback.src.endsWith('.gif')}
+              unoptimized
               width={736}
               height={552}
               onLoad={() => setLoadedCaptureId(currentHectorPlayback.id)}
@@ -627,30 +617,14 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
 
       {shouldShowThinkReminder && (
         <div className="pointer-events-none fixed inset-0 z-[2100] flex items-center justify-center bg-[var(--navy)]/70 p-6">
-          <video
+          <Image
             key={confirmationKey ?? 'think-reminder'}
-            src={THINK_VIDEO_SRC}
-            aria-label="Confirm your move reminder"
-            onLoadedData={(event) => {
-              const video = event.currentTarget;
-              if (video.dataset.playbackStarted) return;
-              video.dataset.playbackStarted = 'true';
-              const elapsed = Math.max(0, (Date.now() - ((confirmationUpdatedAt ?? Date.now()) + CONFIRM_REMINDER_DELAY_MS)) / 1000);
-              if (Number.isFinite(video.duration) && elapsed >= video.duration) {
-                dismissThinkReminder();
-                return;
-              }
-              video.currentTime = elapsed;
-              void video.play().catch(() => {
-                // Mobile browsers may block sound on an automatic reminder.
-                video.muted = true;
-                void video.play().catch(dismissThinkReminder);
-              });
-            }}
-            onEnded={dismissThinkReminder}
+            src={THINK_IMAGE_SRC}
+            alt="Confirm your move reminder"
+            width={736}
+            height={552}
+            unoptimized
             onError={dismissThinkReminder}
-            loop={false}
-            playsInline
             className="hector-capture max-h-[78vh] w-[min(82vw,460px)] object-contain shadow-2xl"
           />
         </div>
