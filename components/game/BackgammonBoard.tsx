@@ -10,11 +10,19 @@ import { Die } from './Dice';
 import { getAllLegalMoves, getMaxPlayableMoveCount, validateMoveRule } from '@/lib/game/engine';
 import { playFeedback } from '@/lib/game/feedback';
 import { applyMove } from '@/lib/game/moves';
+import { getCompletedPip } from '@/lib/game/pip';
+
+export interface BoardPipProgress {
+  version: number;
+  player1: number;
+  player2: number;
+}
 
 interface BoardProps {
   gameState: GameState;
   onConfirmMoves: (moves: Move[]) => Promise<void>;
   onPendingMovesChange: (moves: Move[]) => void;
+  onPipProgressChange?: (progress: BoardPipProgress) => void;
   viewerPlayer: Player | 'spectator';
   hectorPlayer: Player | null;
   connected?: boolean;
@@ -38,7 +46,7 @@ const THINK_IMAGE_SRC = '/assets/images/think/think.gif';
 const CONFIRM_REMINDER_DELAY_MS = 15_000;
 const THINK_REMINDER_DURATION_MS = 2_000;
 
-export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChange, viewerPlayer, hectorPlayer, connected = true }: BoardProps) {
+export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChange, onPipProgressChange, viewerPlayer, hectorPlayer, connected = true }: BoardProps) {
   const [selectedPointState, setSelectedPointState] = useState<{ version: number; point: SelectedPoint }>({
     version: gameState.version,
     point: null,
@@ -204,6 +212,16 @@ export function BackgammonBoard({ gameState, onConfirmMoves, onPendingMovesChang
       : [];
   const visiblePendingMoves = pendingMoves.length > 0 ? pendingMoves : remotePendingMoves;
   const previewState = visiblePendingMoves.reduce((state, move) => applyMove(state, move), gameState);
+  const player1CompletedPip = getCompletedPip(previewState, 'player1');
+  const player2CompletedPip = getCompletedPip(previewState, 'player2');
+
+  useEffect(() => {
+    onPipProgressChange?.({
+      version: gameState.version,
+      player1: player1CompletedPip,
+      player2: player2CompletedPip,
+    });
+  }, [gameState.version, onPipProgressChange, player1CompletedPip, player2CompletedPip]);
 
   useEffect(() => {
     if (

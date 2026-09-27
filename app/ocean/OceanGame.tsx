@@ -9,6 +9,8 @@ import { getInitialGameState } from '@/lib/game/board';
 import { checkTurnEnd, getAllLegalMoves, validateMoveRule } from '@/lib/game/engine';
 import { applyMove } from '@/lib/game/moves';
 import { playFeedback, setFeedbackEnabled } from '@/lib/game/feedback';
+import { getCompletedPip } from '@/lib/game/pip';
+import { PipProgress } from '@/components/game/PipProgress';
 import type { GameState, Move } from '@/types/game';
 import s from './ocean.module.css';
 
@@ -96,9 +98,9 @@ export default function OceanGame() {
     <section className={s.gameArea} aria-label="Backgammon table">
       <div className={s.tableHeading}><div><p className={s.eyebrow}>GOOD TEAM. A LITTLE COMPETITION.</p><h1>Make time for a good game.</h1></div><span className={s.tableLabel}>TURKISH X SPANISH <b>01</b></span></div>
       <div className={s.playerRow}>
-        <div className={s.player}><span className={`${s.playerDot} ${s.ivoryDot}`} /><span>ALEYNA <small>{waiting ? 'YOU' : 'IVORY'}</small></span></div>
+        <div className={s.player}><span className={`${s.playerDot} ${s.ivoryDot}`} /><div className={s.playerInfo}><span>ALEYNA <small>{waiting ? 'YOU' : 'IVORY'}</small></span><PipProgress completedPip={getCompletedPip(game, 'player1')} playerName="ALEYNA" /></div></div>
         <span className={s.status} role="status"><i />{waiting ? 'WAITING FOR OPPONENT' : finished ? `${game.winner === 'player1' ? 'ALEYNA' : 'GUEST'} WINS` : `${name}’S TURN`}</span>
-        <div className={`${s.player} ${s.opponent}`}><span>{waiting ? 'OPEN SEAT' : 'GUEST'}<small>{waiting ? 'INVITE A FRIEND' : 'OCEAN'}</small></span><span className={`${s.playerDot} ${waiting ? s.emptyDot : s.tealDot}`} /></div>
+        <div className={`${s.player} ${s.opponent}`}><div className={s.playerInfo}><span>{waiting ? 'OPEN SEAT' : 'GUEST'}<small>{waiting ? 'INVITE A FRIEND' : 'OCEAN'}</small></span><PipProgress completedPip={getCompletedPip(game, 'player2')} playerName={waiting ? 'OPEN SEAT' : 'GUEST'} /></div><span className={`${s.playerDot} ${waiting ? s.emptyDot : s.tealDot}`} /></div>
       </div>
 
       <div className={s.boardFrame}>

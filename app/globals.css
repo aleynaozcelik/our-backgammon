@@ -389,7 +389,10 @@ body:has(.game-shell),
 .game-invite-error { margin: 16px 0 0; color: #617679; font-size: 13px; line-height: 1.8; }
 .game-player-row { align-self: center; display: flex; width: min(100%, var(--game-board-row-width, 942px)); align-items: center; justify-content: space-between; margin: 0 5px 16px; }
 .game-player { display: flex; flex: 1; align-items: center; gap: 11px; color: var(--navy); font-size: 10px; font-weight: 500; letter-spacing: 1.6px; }
-.game-player > span:not(.game-player-dot), .game-status { text-transform: uppercase; }
+.game-player-name, .game-status { text-transform: uppercase; }
+.game-player-details { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.game-player-name { overflow-wrap: anywhere; }
+.game-opponent .game-player-details { align-items: flex-end; }
 .game-player small { margin-left: 9px; color: #7c8a88; font-size: 7px; font-weight: 400; letter-spacing: 1.5px; }
 .game-player-dot { display: block; flex-shrink: 0; width: 14px; height: 14px; border-radius: 50%; }
 .game-ivory-dot { border: 1px solid #babdaf; background: #f9f6ef; box-shadow: 0 2px 3px #103f4a0c; }
@@ -509,7 +512,8 @@ body:has(.game-shell),
   .game-room .game-brand-logo { display: none; }
   .game-room .game-player-row { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; margin: 0; align-self: center; gap: 8px; }
   .game-room .game-player { min-width: 0; }
-  .game-room .game-player > span:not(.game-player-dot) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .game-room .game-player-details { gap: 3px; }
+  .game-room .game-player-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
   .game-room .game-player small { display: none; }
   .game-room .game-viewport { grid-column: 1 / -1; grid-row: 2; min-width: 0; height: 100%; }
   .game-room .game-summary-finished { grid-column: 1 / -1; grid-row: 3; }
@@ -523,7 +527,6 @@ body:has(.game-shell),
 .game-match-score-value b { min-width: 1.5ch; }
 .game-match-score-value > span { color: #7c8a88; font-size: 14px; }
 .game-player-row .game-player { min-width: 0; }
-.game-player-row .game-player > span:not(.game-player-dot) { overflow-wrap: anywhere; }
 @media (max-width: 700px) and (orientation: portrait) {
   .game-player-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 6px; }
   .game-player-row .game-player { gap: 6px; letter-spacing: 1px; }

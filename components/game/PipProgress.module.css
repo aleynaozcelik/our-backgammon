@@ -1,0 +1,43 @@
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 88px;
+  max-width: 100%;
+  color: var(--ocean);
+}
+
+.value {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: .3px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.track {
+  display: block;
+  overflow: hidden;
+  height: 3px;
+  border-radius: 999px;
+  background: #103f4a1a;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: currentColor;
+  transition: width 180ms ease-out;
+}
+
+@media (orientation: landscape) and (max-height: 650px) {
+  .progress { width: 72px; gap: 2px; }
+  .value { font-size: 8px; }
+  .track { height: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill { transition: none; }
+}

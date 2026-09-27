@@ -9,7 +9,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GameState, Player, Move } from '@/types/game';
-import { BackgammonBoard } from '@/components/game/BackgammonBoard';
+import { BackgammonBoard, type BoardPipProgress } from '@/components/game/BackgammonBoard';
+import { PipProgress } from '@/components/game/PipProgress';
+import { getCompletedPip } from '@/lib/game/pip';
 import { PlayerPanel } from '@/components/game/PlayerPanel';
 import { VictoryOverlay } from '@/components/game/VictoryOverlay';
 import {
@@ -204,6 +206,7 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
   const [inviteCopyError, setInviteCopyError] = useState(false);
 
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [pipProgress, setPipProgress] = useState<BoardPipProgress | null>(null);
   const [viewerPlayer, setViewerPlayer] = useState<Player | 'spectator'>('spectator');
   const [playersInfo, setPlayersInfo] = useState({ player1: '', player2: '' });
   const syncTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
@@ -669,6 +672,12 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
     player1: (gameState.matchScore?.player1 ?? 0) + (finishedWinner === 'player1' ? 1 : 0),
     player2: (gameState.matchScore?.player2 ?? 0) + (finishedWinner === 'player2' ? 1 : 0),
   };
+  const completedPip = pipProgress?.version === gameState.version
+    ? pipProgress
+    : {
+      player1: getCompletedPip(gameState, 'player1'),
+      player2: getCompletedPip(gameState, 'player2'),
+    };
   const finishedVictoryOutcome = finishedWinner
     ? getVictoryOutcome(finishedWinner, viewerPlayer, hectorPlayer)
     : null;
@@ -724,20 +733,26 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
       <div className="game-player-row">
         <div className="game-player">
           <span className="game-player-dot game-ivory-dot" />
-          <span>{playersInfo.player1}<small>{viewerPlayer === 'player1' ? 'YOU' : 'IVORY'}</small></span>
+          <div className="game-player-details">
+            <span className="game-player-name">{playersInfo.player1}<small>{viewerPlayer === 'player1' ? 'YOU' : 'IVORY'}</small></span>
+            <PipProgress completedPip={completedPip.player1} playerName={playersInfo.player1} />
+          </div>
         </div>
         <div className="game-match-status">
-        <span className="game-status" role="status">
-          <i />
-          {waitingForOpponent ? 'WAITING FOR OPPONENT' : gameState.status === 'FINISHED' ? `${gameState.winner === 'player1' ? playersInfo.player1 : playersInfo.player2} WINS` : `${activePlayerName}’S TURN`}
-        </span>
+          <span className="game-status" role="status">
+            <i />
+            {waitingForOpponent ? 'WAITING FOR OPPONENT' : gameState.status === 'FINISHED' ? `${gameState.winner === 'player1' ? playersInfo.player1 : playersInfo.player2} WINS` : `${activePlayerName}’S TURN`}
+          </span>
           <div className="game-match-score" role="status" aria-label={`Match score: ${playersInfo.player1} ${matchScore.player1}, ${playersInfo.player2} ${matchScore.player2}`}>
             <span className="game-match-score-label">SCORE</span>
             <span className="game-match-score-value"><b>{matchScore.player1}</b><span aria-hidden="true">-</span><b>{matchScore.player2}</b></span>
           </div>
         </div>
         <div className="game-player game-opponent">
-          <span>{waitingForOpponent ? 'OPEN SEAT' : playersInfo.player2}<small>{viewerPlayer === 'player2' ? 'YOU' : waitingForOpponent ? 'INVITE A FRIEND' : 'OCEAN'}</small></span>
+          <div className="game-player-details">
+            <span className="game-player-name">{waitingForOpponent ? 'OPEN SEAT' : playersInfo.player2}<small>{viewerPlayer === 'player2' ? 'YOU' : waitingForOpponent ? 'INVITE A FRIEND' : 'OCEAN'}</small></span>
+            <PipProgress completedPip={completedPip.player2} playerName={waitingForOpponent ? 'OPEN SEAT' : playersInfo.player2} />
+          </div>
           <span className={`game-player-dot ${waitingForOpponent ? 'game-empty-dot' : 'game-teal-dot'}`} />
         </div>
       </div>
@@ -747,6 +762,7 @@ export function GameRoomClient({ roomCode }: GameRoomClientProps) {
           gameState={gameState}
           onConfirmMoves={handleConfirmMoves}
           onPendingMovesChange={handlePendingMovesChange}
+          onPipProgressChange={setPipProgress}
           viewerPlayer={viewerPlayer}
           hectorPlayer={hectorPlayer}
           connected={connected}
